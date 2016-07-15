@@ -7,6 +7,7 @@ var communicationError = new Error('Can not communicate with Home Assistant.')
 var HomeAssistantLight;
 var HomeAssistantSwitch;
 var HomeAssistantMediaPlayer;
+var HomeAssistantThermostat;
 
 
 module.exports = function(homebridge) {
@@ -19,6 +20,7 @@ module.exports = function(homebridge) {
   HomeAssistantLight = require('./accessories/light')(Service, Characteristic, communicationError);
   HomeAssistantSwitch = require('./accessories/switch')(Service, Characteristic, communicationError);
   HomeAssistantMediaPlayer = require('./accessories/media_player')(Service, Characteristic, communicationError);
+  HomeAssistantThermostat = require('./accessories/thermostat')(Service, Characteristic, communicationError);
 
   homebridge.registerPlatform("homebridge-homeassistant", "HomeAssistant", HomeAssistantPlatform, false);
 }
@@ -136,6 +138,8 @@ HomeAssistantPlatform.prototype = {
           accessory = new HomeAssistantSwitch(that.log, entity, that, 'scene')
         }else if (entity_type == 'media_player' && entity.attributes && entity.attributes.supported_media_commands){
           accessory = new HomeAssistantMediaPlayer(that.log, entity, that)
+        }else if (entity_type == 'thermostat'){
+          accessory = new HomeAssistantThermostat(that.log, entity, that)
         }
 
         if (accessory) {
