@@ -15,10 +15,15 @@ function HomeAssistantSwitch(log, data, client, type) {
   this.data = data
   this.entity_id = data.entity_id
   if (data.attributes && data.attributes.friendly_name) {
-    this.name = data.attributes.friendly_name
+    this.name = data.attributes.friendly_name		
   }else{
     this.name = data.entity_id.split('.').pop().replace(/_/g, ' ')
   }
+	
+	if(this.domain == "device_tracker") {
+		this.name = "Device: " + this.name
+	}
+
 
   this.client = client
   this.log = log;
@@ -64,6 +69,54 @@ HomeAssistantSwitch.prototype = {
       }.bind(this))
     }
   },
+  getHomeState: function(callback){
+    this.client.fetchState(this.entity_id, function(data){
+      if (data) {
+				this.log("getHomeState data.state: %s", data.state)
+				if(data.state == "home") {
+					powerState = true				
+				} else {
+					powerState = false					
+				}
+        callback(null, powerState)
+      }else{
+        callback(communicationError)
+      }
+    }.bind(this))
+  },
+  setHomeState: function(powerOn, callback) {
+    var that = this;
+    var service_data = {}
+    service_data.dev_id = this.entity_id.split(".")[1]
+
+    if (powerOn) {
+      this.log("Setting home state on the '"+this.name+"' to home");
+
+			service_data.location_name = "home"
+
+      this.client.callService(this.domain, 'see', service_data, function(data){
+        if (data) {
+          that.log("Successfully set home state on the '"+that.name+"' to home");
+          callback()
+        }else{
+          callback(communicationError)
+        }
+      }.bind(this))
+    }else{
+      this.log("Setting home state on the '"+this.name+"' to not_home");
+
+			service_data.location_name = "not_home"
+
+      this.client.callService(this.domain, 'see', service_data, function(data){
+        if (data) {
+          that.log("Successfully set home state on the '"+that.name+"' to not_home");
+          callback()
+        }else{
+          callback(communicationError)
+        }
+      }.bind(this))
+    }
+  },	
   getServices: function() {
     var switchService = new Service.Switch();
     var informationService = new Service.AccessoryInformation();
@@ -72,6 +125,9 @@ HomeAssistantSwitch.prototype = {
     switch (this.domain) {
       case "scene":
         model = "Scene"
+        break;
+      case "device_tracker":
+        model = "device_tracker"
         break;
       default:
         model = "Switch"
@@ -87,7 +143,11 @@ HomeAssistantSwitch.prototype = {
         .getCharacteristic(Characteristic.On)
         .on('get', this.getPowerState.bind(this))
         .on('set', this.setPowerState.bind(this));
-
+		} else if(this.domain == 'device_tracker') {
+      switchService
+      	.getCharacteristic(Characteristic.On)
+     	  .on('get', this.getHomeState.bind(this))
+      	.on('set', this.setHomeState.bind(this));			
     }else{
       switchService
         .getCharacteristic(Characteristic.On)

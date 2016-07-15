@@ -136,6 +136,8 @@ HomeAssistantPlatform.prototype = {
           accessory = new HomeAssistantSwitch(that.log, entity, that)
         }else if (entity_type == 'scene'){
           accessory = new HomeAssistantSwitch(that.log, entity, that, 'scene')
+        }else if (entity_type == 'device_tracker'){
+          accessory = new HomeAssistantSwitch(that.log, entity, that, 'device_tracker')
         }else if (entity_type == 'media_player' && entity.attributes && entity.attributes.supported_media_commands){
           accessory = new HomeAssistantMediaPlayer(that.log, entity, that)
         }else if (entity_type == 'thermostat'){
